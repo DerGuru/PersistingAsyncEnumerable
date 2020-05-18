@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Andreas Jakof</Authors>
+    <Description>Persisting data while downloading them as IAsyncEnumerable</Description>
   </PropertyGroup>
 
 </Project>
