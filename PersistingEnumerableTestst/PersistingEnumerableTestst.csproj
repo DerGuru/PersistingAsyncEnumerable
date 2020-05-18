@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\PersistingAsyncEnumerable\PersistingAsyncEnumerable.csproj" />
+    <ProjectReference Include="..\PersistingAsyncEnumerable\PersistingAsyncEnumerable.csproj" />
   </ItemGroup>
 
 </Project>

@@ -2,11 +2,6 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/PersistingAsyncEnumerable/v16/TestStore/0
-/.vs/slnx.sqlite
-/PersistingAsyncEnumerable/bin/Debug/netcoreapp3.1
-/PersistingAsyncEnumerable/obj
-/PersistingEnumerableTestst/.vs/PersistingEnumerableTestst/v16
-/.vs
-/PersistingEnumerableTestst/PersistingEnumerableTestst/bin/Debug/netcoreapp3.1
-/PersistingEnumerableTestst/PersistingEnumerableTestst/obj
+/**/.vs
+/**/bin
+/**/obj
