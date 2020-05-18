@@ -22,14 +22,24 @@ namespace System.Collections.Generic
 
         object System.Collections.IEnumerator.Current => _current.Value;
 
-        public void Dispose(){}
-
-        public ValueTask DisposeAsync()
+        public void Dispose()
         {
-            return new ValueTask(Task.CompletedTask);
+            _current = null;
+            _storage = null;
+            _asyncEnumerator = null;
+            _moving = null;
         }
 
-        public bool MoveNext() => MoveNextAsync().GetAwaiter().GetResult();
+        public ValueTask DisposeAsync() => new ValueTask(Task.Run(Dispose));
+
+
+        public bool MoveNext()
+        {
+            var awaiter = MoveNextAsync().GetAwaiter();
+            while (!awaiter.IsCompleted)
+                Thread.Yield();
+            return awaiter.GetResult();
+        }
 
 
         public async ValueTask<bool> MoveNextAsync()
@@ -83,7 +93,7 @@ namespace System.Collections.Generic
                     await Task.Yield();
                 hasMoved = _current != _storage.Last;
             }
-            
+
             if (hasMoved)
             {
                 if (_current == null)
@@ -107,6 +117,6 @@ namespace System.Collections.Generic
         {
             _current = null;
         }
-       
+
     }
 }

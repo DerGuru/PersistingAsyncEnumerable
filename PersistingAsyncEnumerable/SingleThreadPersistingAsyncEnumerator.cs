@@ -3,13 +3,17 @@ using System.Threading.Tasks;
 
 namespace System.Collections.Generic
 {
-    public class SingleThreadedPersistingAsyncEnumerator<T> : IAsyncEnumerator<T>, IEnumerator<T>
+    /// <summary>
+    /// Persisting Async Enumerator for Single Threaded Access
+    /// </summary>
+    /// <typeparam name="T">Contained Element's Type</typeparam>
+    public class SingleThreadPersistingAsyncEnumerator<T> : IAsyncEnumerator<T>, IEnumerator<T>
     {
         IAsyncEnumerator<T> _asyncEnumerator;
         LinkedList<T> _storage;
         LinkedListNode<T> _current;
 
-        internal SingleThreadedPersistingAsyncEnumerator(IAsyncEnumerator<T> enumerator, LinkedList<T> storage)
+        public SingleThreadPersistingAsyncEnumerator(IAsyncEnumerator<T> enumerator, LinkedList<T> storage)
         {
             _asyncEnumerator = enumerator;
             _storage = storage;
@@ -20,15 +24,26 @@ namespace System.Collections.Generic
 
         object System.Collections.IEnumerator.Current => _current.Value;
 
-        public void Dispose(){}
+        public bool IsDisposed
+        { get; private set; } = false;
 
-        public ValueTask DisposeAsync()
+        public void Dispose()
         {
-            return new ValueTask(Task.CompletedTask);
+            _current = null;
+            _storage = null;
+            _asyncEnumerator = null;
+            IsDisposed = true;
         }
 
-        public bool MoveNext() => MoveNextAsync().GetAwaiter().GetResult();
+        public ValueTask DisposeAsync() => new ValueTask(Task.Run(Dispose));
 
+        public bool MoveNext()
+        {
+            var awaiter = MoveNextAsync().GetAwaiter();
+            while (!awaiter.IsCompleted)
+                Thread.Yield();
+            return awaiter.GetResult();
+        }
 
         public async ValueTask<bool> MoveNextAsync()
         {
@@ -42,16 +57,16 @@ namespace System.Collections.Generic
                 _current = _storage.First;
                 return _current != null;
             }
+            
+            if (_current.Next != null) //data is already there
+            {  
 
-            if (_current.Next != null)
-            {
-                //data already there
                 _current = _current.Next;
                 return true;
             }
-            else
+            else //data is not yet there
             {
-                //data not yet there
+                
                 return await Move();
             }
 
@@ -72,6 +87,6 @@ namespace System.Collections.Generic
         {
             _current = null;
         }
-       
+
     }
 }
