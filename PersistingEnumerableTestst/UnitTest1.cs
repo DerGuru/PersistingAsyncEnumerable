@@ -19,13 +19,13 @@ namespace PersistingEnumerableTestst
             while (i < count)
             {
                 await Task.Delay(delay);
-                yield return await Task.Run(() => i);
+                yield return i;
                 ++i;
             }
         }
 
         [TestMethod]
-        public async Task AsyncTest()
+        public async Task AsyncTest() 
         {
             await using (var p = new SingleThreadPersistingAsyncEnumerable<int>(GetAsyncEnuDelayed(100, 5)))
             {
@@ -109,6 +109,49 @@ namespace PersistingEnumerableTestst
                 }
 
             }
+        }
+
+        [TestMethod]
+        public async Task AutoLoadingParallelTest()
+        {
+            int count = 1000;
+            var locker = new object();
+            await using (var p = new AutoLoadingPersistingAsyncEnumerable<int>(GetAsyncEnuDelayed(count, 1)))
+            {
+                var workers = GetWorkers(5, async () =>
+                {
+                    List<int> list = new List<int>(count);
+                    await foreach (int i in p)
+                    {
+                        list.Add(i);
+                    }
+                    return list;
+                }, locker).ToList();
+                var results = (await Task.WhenAll(workers)).ToList();
+
+                Assert.IsTrue(results.Select(x => x.Count).All(x => x == count), new StringBuilder().AppendJoin(',', results.Select(x => x.Count)).ToString());
+                for (int i = 0; i < count; ++i)
+                {
+                    Assert.IsTrue(results.Select(x => x[i]).All(x => x == i), $"{i}");
+                }
+
+            }
+        }
+
+
+        [TestMethod]
+        public async Task LinqTest()
+        {
+            var p = new ThreadSafePersistingAsyncEnumerable<int>(GetAsyncEnuDelayed(100, 500));
+            Task t1 = new Task(() => Assert.IsTrue(p.Contains(5)));
+            Task t2 = new Task(() => Assert.IsTrue(p.Contains(50)));
+            Task t3 = new Task(() => {
+                var odds = p.Where(x => x % 2 > 0);
+                Assert.IsTrue(odds.Count() == 50);
+            });
+            var tasks = new List<Task> { t1, t2, t3 };
+            tasks.ForEach(x => x.Start());
+            await Task.WhenAll(tasks);
         }
     }
 }

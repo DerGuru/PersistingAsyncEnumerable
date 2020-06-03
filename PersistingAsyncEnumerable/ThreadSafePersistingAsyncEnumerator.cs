@@ -18,6 +18,7 @@ namespace System.Collections.Generic
             _moving = moving;
         }
 
+
         public T Current => _current.Value;
 
         object System.Collections.IEnumerator.Current => _current.Value;
@@ -78,9 +79,7 @@ namespace System.Collections.Generic
             {
                 try
                 {
-                    hasMoved = await _asyncEnumerator.MoveNextAsync();
-                    if (hasMoved)
-                        _storage.AddLast(_asyncEnumerator.Current);
+                    hasMoved = await MoveAsyncEnum();
                 }
                 finally
                 {
@@ -90,7 +89,7 @@ namespace System.Collections.Generic
             else
             {
                 while (_moving.Reference > 0)
-                    await Task.Yield();
+                    await Task.Delay(30);
                 hasMoved = _current != _storage.Last;
             }
 
@@ -104,6 +103,14 @@ namespace System.Collections.Generic
             }
             else
                 return false;
+        }
+
+        private async Task<bool> MoveAsyncEnum()
+        {
+            var hasMoved = await _asyncEnumerator.MoveNextAsync();
+            if (hasMoved)
+                _storage.AddLast(_asyncEnumerator.Current);
+            return hasMoved;
         }
 
         private LinkedListNode<T> GetNext(LinkedListNode<T> last)
